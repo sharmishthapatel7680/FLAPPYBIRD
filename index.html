@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Flappy Bird</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 360px;
+            height: 640px;
+            background-color: #87CEEB;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 20;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        #startScreen {
+            background-color: rgba(30, 144, 255, 0.8);
+        }
+        
+        #gameOverScreen {
+            display: none;
+        }
+        
+        #mainMenuScreen {
+            display: none;
+        }
+        
+        #settingsScreen {
+            display: none;
+        }
+        
+        #skinsScreen {
+            display: none;
+        }
+        
+        #backgroundsScreen {
+            display: none;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #FFD700;
+        }
+        
+        .btn {
+            width: 200px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #FF9800;
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .option {
+            width: 200px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 18px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .option:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .option.selected {
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            font-size: 16px;
+            color: #ddd;
+            max-width: 80%;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .difficulty-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #90EE90;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreDisplay">0</div>
+        
+        <div id="startScreen" class="screen">
+            <h1>Easy Flappy Bird</h1>
+            <p class="instructions">Press SPACE or TAP to make the bird fly. Avoid the poles!</p>
+            <p class="difficulty-info">EASY MODE: Gentle jumps & wider gaps</p>
+            <button class="btn btn-primary" id="startBtn">Start Game</button>
+        </div>
+        
+        <div id="gameOverScreen" class="screen">
+            <h1>Game Over!</h1>
+            <h2 id="finalScore">Score: 0</h2>
+            <button class="btn btn-primary" id="playAgainBtn">Play Again</button>
+            <button class="btn btn-secondary" id="mainMenuBtn">Main Menu</button>
+        </div>
+        
+        <div id="mainMenuScreen" class="screen">
+            <h1>Main Menu</h1>
+            <button class="btn btn-primary" id="playAgainFromMenuBtn">Play Again</button>
+            <button class="btn btn-secondary" id="settingsBtn">Settings</button>
+            <button class="btn btn-danger" id="exitGameBtn">Exit Game</button>
+        </div>
+        
+        <div id="settingsScreen" class="screen">
+            <button class="back-btn" id="backFromSettingsBtn">←</button>
+            <h1>Settings</h1>
+            <button class="btn btn-primary" id="skinsBtn">Skins</button>
+            <button class="btn btn-primary" id="backgroundsBtn">Backgrounds</button>
+        </div>
+        
+        <div id="skinsScreen" class="screen">
+            <button class="back-btn" id="backFromSkinsBtn">←</button>
+            <h1>Select Skin</h1>
+            <div class="option selected" data-skin="bird">Bird</div>
+            <div class="option" data-skin="football">Football</div>
+            <div class="option" data-skin="cricket">Cricket Ball</div>
+        </div>
+        
+        <div id="backgroundsScreen" class="screen">
+            <button class="back-btn" id="backFromBackgroundsBtn">←</button>
+            <h1>Select Background</h1>
+            <div class="option selected" data-bg="sky">Sky</div>
+            <div class="option" data-bg="night">Night</div>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let canvas, ctx;
+        let gameActive = false;
+        let score = 0;
+        let frames = 0;
+        
+        // Game settings - MADE EASIER
+        let currentSkin = 'bird';
+        let currentBackground = 'sky';
+        
+        // Bird properties - MADE EASIER
+        const bird = {
+            x: 80, // Moved further right for more reaction time
+            y: 150,
+            width: 34,
+            height: 24,
+            gravity: 0.3, // Reduced gravity for slower falling
+            lift: -8, // REDUCED LIFT for less jump height
+            velocity: 0,
+            
+            draw: function() {
+                ctx.fillStyle = this.getColor();
+                
+                if (currentSkin === 'bird') {
+                    // Draw bird shape
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Draw eye
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(this.x + 5, this.y - 5, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = 'black';
+                    ctx.beginPath();
+                    ctx.arc(this.x + 6, this.y - 5, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Draw beak
+                    ctx.fillStyle = 'orange';
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 10, this.y);
+                    ctx.lineTo(this.x + 20, this.y);
+                    ctx.lineTo(this.x + 10, this.y + 5);
+                    ctx.fill();
+                } else if (currentSkin === 'football') {
+                    // Draw football
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Football pattern
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2 - 2, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - this.width/2 + 2, this.y);
+                    ctx.lineTo(this.x + this.width/2 - 2, this.y);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y - this.height/2 + 2);
+                    ctx.lineTo(this.x, this.y + this.height/2 - 2);
+                    ctx.stroke();
+                } else if (currentSkin === 'cricket') {
+                    // Draw cricket ball (red)
+                    ctx.fillStyle = '#8B0000';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Cricket ball seam
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2 - 2, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            },
+            
+            getColor: function() {
+                if (currentSkin === 'bird') return '#FFD700'; // Yellow bird
+                if (currentSkin === 'football') return 'white';
+                if (currentSkin === 'cricket') return '#8B0000'; // Dark red
+                return '#FFD700'; // Default
+            },
+            
+            update: function() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+                
+                // Check if bird hits the ground or sky - MADE MORE FORGIVING
+                if (this.y + this.height/2 >= canvas.height - 80) {
+                    this.y = canvas.height - 80 - this.height/2;
+                    // Only game over if hitting ground hard
+                    if (this.velocity > 5) {
+                        gameOver();
+                    } else {
+                        this.velocity = 0; // Soft landing
+                    }
+                }
+                
+                if (this.y - this.height/2 <= 0) {
+                    this.y = this.height/2;
+                    // Only game over if hitting ceiling hard
+                    if (this.velocity < -5) {
+                        gameOver();
+                    } else {
+                        this.velocity = 0; // Soft touch
+                    }
+                }
+            },
+            
+            flap: function() {
+                this.velocity = this.lift; // Now uses the reduced lift value
+            }
+        };
+        
+        // Pipes (poles) properties - MADE MUCH EASIER
+        const pipes = {
+            position: [],
+            gap: 220, // MUCH wider gap
+            minHeight: 80, // Higher minimum height
+            maxHeight: 350, // Lower maximum height
+            width: 60,
+            speed: 1.5, // Slower speed
+            
+            draw: function() {
+                for (let i = 0; i < this.position.length; i++) {
+                    let p = this.position[i];
+                    
+                    // Draw top pipe
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillRect(p.x, 0, this.width, p.top);
+                    
+                    // Draw bottom pipe
+                    ctx.fillRect(p.x, p.top + this.gap, this.width, canvas.height - (p.top + this.gap));
+                    
+                    // Pipe details
+                    ctx.fillStyle = '#388E3C';
+                    ctx.fillRect(p.x - 5, p.top - 20, this.width + 10, 20);
+                    ctx.fillRect(p.x - 5, p.top + this.gap, this.width + 10, 20);
+                }
+            },
+            
+            update: function() {
+                // Spawn pipes less frequently
+                if (frames % 150 === 0) {
+                    this.position.push({
+                        x: canvas.width,
+                        top: Math.floor(Math.random() * (this.maxHeight - this.minHeight)) + this.minHeight,
+                        passed: false
+                    });
+                }
+                
+                for (let i = 0; i < this.position.length; i++) {
+                    let p = this.position[i];
+                    p.x -= this.speed; // Use slower speed
+                    
+                    // Check if bird passed the pipe
+                    if (p.x + this.width < bird.x && !p.passed) {
+                        score++;
+                        p.passed = true;
+                        document.getElementById('scoreDisplay').textContent = score;
+                    }
+                    
+                    // Check for collision - MADE MORE FORGIVING
+                    if (
+                        bird.x + bird.width/2 > p.x && 
+                        bird.x - bird.width/2 < p.x + this.width && 
+                        (bird.y - bird.height/2 < p.top || bird.y + bird.height/2 > p.top + this.gap)
+                    ) {
+                        gameOver();
+                    }
+                    
+                    // Remove pipes that are off screen
+                    if (p.x < -this.width) {
+                        this.position.shift();
+                    }
+                }
+            }
+        };
+        
+        // Background elements
+        const background = {
+            draw: function() {
+                // Draw background based on selection
+                if (currentBackground === 'sky') {
+                    // Sky background
+                    ctx.fillStyle = '#87CEEB';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Draw clouds
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(100, 80, 30, 0, Math.PI * 2);
+                    ctx.arc(140, 70, 40, 0, Math.PI * 2);
+                    ctx.arc(180, 80, 30, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.beginPath();
+                    ctx.arc(300, 120, 25, 0, Math.PI * 2);
+                    ctx.arc(330, 110, 35, 0, Math.PI * 2);
+                    ctx.arc(360, 120, 25, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (currentBackground === 'night') {
+                    // Night background
+                    ctx.fillStyle = '#191970';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Draw stars
+                    ctx.fillStyle = 'white';
+                    for (let i = 0; i < 50; i++) {
+                        let x = Math.random() * canvas.width;
+                        let y = Math.random() * canvas.height / 2;
+                        let radius = Math.random() * 2;
+                        ctx.beginPath();
+                        ctx.arc(x, y, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    
+                    // Draw moon
+                    ctx.fillStyle = '#F0F0F0';
+                    ctx.beginPath();
+                    ctx.arc(300, 80, 30, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Draw ground
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+                
+                // Draw grass
+                ctx.fillStyle = '#7CFC00';
+                ctx.fillRect(0, canvas.height - 80, canvas.width, 10);
+            }
+        };
+        
+        // Initialize the game
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = 360;
+            canvas.height = 640;
+            
+            // Event listeners
+            document.addEventListener('keydown', function(e) {
+                if (e.code === 'Space') {
+                    if (gameActive) {
+                        bird.flap();
+                    } else if (document.getElementById('startScreen').style.display === 'flex') {
+                        startGame();
+                    }
+                }
+            });
+            
+            canvas.addEventListener('click', function() {
+                if (gameActive) {
+                    bird.flap();
+                } else if (document.getElementById('startScreen').style.display === 'flex') {
+                    startGame();
+                }
+            });
+            
+            // Button event listeners
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('playAgainBtn').addEventListener('click', startGame);
+            document.getElementById('playAgainFromMenuBtn').addEventListener('click', startGame);
+            document.getElementById('mainMenuBtn').addEventListener('click', showMainMenu);
+            document.getElementById('exitGameBtn').addEventListener('click', exitGame);
+            document.getElementById('settingsBtn').addEventListener('click', showSettings);
+            document.getElementById('skinsBtn').addEventListener('click', showSkins);
+            document.getElementById('backgroundsBtn').addEventListener('click', showBackgrounds);
+            
+            // Back buttons
+            document.getElementById('backFromSettingsBtn').addEventListener('click', showMainMenu);
+            document.getElementById('backFromSkinsBtn').addEventListener('click', showSettings);
+            document.getElementById('backFromBackgroundsBtn').addEventListener('click', showSettings);
+            
+            // Skin selection
+            document.querySelectorAll('#skinsScreen .option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('#skinsScreen .option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    currentSkin = this.getAttribute('data-skin');
+                });
+            });
+            
+            // Background selection
+            document.querySelectorAll('#backgroundsScreen .option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('#backgroundsScreen .option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    currentBackground = this.getAttribute('data-bg');
+                });
+            });
+            
+            // Show start screen
+            showScreen('startScreen');
+        }
+        
+        // Start the game
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            frames = 0;
+            
+            // Reset bird position
+            bird.y = 150;
+            bird.velocity = 0;
+            
+            // Clear pipes
+            pipes.position = [];
+            
+            // Update score display
+            document.getElementById('scoreDisplay').textContent = score;
+            
+            // Hide all screens
+            hideAllScreens();
+            
+            // Start game loop
+            gameLoop();
+        }
+        
+        // Game over function
+        function gameOver() {
+            gameActive = false;
+            document.getElementById('finalScore').textContent = 'Score: ' + score;
+            showScreen('gameOverScreen');
+        }
+        
+        // Main game loop
+        function gameLoop() {
+            if (!gameActive) return;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background
+            background.draw();
+            
+            // Update and draw pipes
+            pipes.update();
+            pipes.draw();
+            
+            // Update and draw bird
+            bird.update();
+            bird.draw();
+            
+            // Increment frame counter
+            frames++;
+            
+            // Continue game loop
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Screen management functions
+        function showScreen(screenId) {
+            hideAllScreens();
+            document.getElementById(screenId).style.display = 'flex';
+        }
+        
+        function hideAllScreens() {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.style.display = 'none';
+            });
+        }
+        
+        function showMainMenu() {
+            showScreen('mainMenuScreen');
+        }
+        
+        function showSettings() {
+            showScreen('settingsScreen');
+        }
+        
+        function showSkins() {
+            showScreen('skinsScreen');
+        }
+        
+        function showBackgrounds() {
+            showScreen('backgroundsScreen');
+        }
+        
+        function exitGame() {
+            // In a real game, this might close the window/tab
+            // For this demo, we'll just go back to the start screen
+            showScreen('startScreen');
+        }
+        
+        // Start the game when page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
